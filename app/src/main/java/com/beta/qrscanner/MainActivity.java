@@ -4,10 +4,9 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.Manifest;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.SparseArray;
@@ -15,7 +14,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
-import android.net.Uri;
 
 import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.barcode.Barcode;
@@ -27,8 +25,9 @@ public class MainActivity extends AppCompatActivity {
     Button btnScanBarcode;
     EditText resultText;
     Button btnGalleyBarcode;
-
+    Button btnContacts;
     private static final int REQUEST_IMAGE_GALLERY = 101;
+    private static final int REQUEST_CONTACTS = 102;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
         btnScanBarcode = findViewById(R.id.btnScanBarcode);
         resultText = findViewById(R.id.result_text);
         btnGalleyBarcode = findViewById(R.id.btnGalleyBarcode);
+        btnContacts = findViewById(R.id.btnContacts);
 
         btnScanBarcode.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -51,6 +51,14 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 Intent galleryIntent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
                 startActivityForResult(galleryIntent, REQUEST_IMAGE_GALLERY);
+            }
+        });
+
+        btnContacts.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent contactsIntent = new Intent(MainActivity.this, ContactsActivity.class);
+                startActivityForResult(contactsIntent, REQUEST_CONTACTS);
             }
         });
     }
@@ -93,6 +101,9 @@ public class MainActivity extends AppCompatActivity {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        } else if (requestCode == REQUEST_CONTACTS && resultCode == RESULT_OK && data != null) {
+            String selectedNumber = data.getStringExtra("selectedNumber");
+            resultText.setText(selectedNumber);
         }
     }
 }
