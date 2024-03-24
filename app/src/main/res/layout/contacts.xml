@@ -4,11 +4,19 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Your layout for displaying contacts -->
-    <!-- contacts.xml -->
+    <!-- Search bar -->
+    <EditText
+        android:id="@+id/search_edit_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Search contacts"
+        android:inputType="text"/>
+
+    <!-- Contacts ListView -->
     <ListView
         android:id="@+id/contacts_list"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent"
+        android:layout_below="@id/search_edit_text"/>
 
 </RelativeLayout>
