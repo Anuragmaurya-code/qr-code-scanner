@@ -1,104 +1,115 @@
 package com.beta.qrscanner;
-
+import android.Manifest;
+import android.content.ContentResolver;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.provider.ContactsContract;
-import android.text.Editable;
-import android.text.TextWatcher;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.SearchView;
+import android.widget.TextView;
+import android.widget.Toast;
 
-import androidx.annotation.Nullable;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import java.util.ArrayList;
 
 public class ContactsActivity extends AppCompatActivity {
 
+    private static final int PERMISSION_REQUEST_READ_CONTACTS = 1;
+
+    private ListView listViewContacts;
+    private SearchView searchView;
     private ArrayList<String> contactsList;
     private ArrayAdapter<String> adapter;
+    private TextView selectedContactTextView;
+    private String selectedContact;
 
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.contacts);
 
-        ListView contactsListView = findViewById(R.id.contacts_list);
-        EditText searchEditText = findViewById(R.id.search_edit_text);
+        listViewContacts = findViewById(R.id.listViewContacts);
+        searchView = findViewById(R.id.searchView);
+        selectedContactTextView = findViewById(R.id.selectedContactTextView);
 
-        // Initialize contacts list
-        contactsList = getContacts();
-
-        // Initialize adapter with all contacts
+        contactsList = new ArrayList<>();
         adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, contactsList);
-        contactsListView.setAdapter(adapter);
+        listViewContacts.setAdapter(adapter);
 
-        // Set click listener for ListView items
-        contactsListView.setOnItemClickListener((parent, view, position, id) -> {
-            String selectedContact = (String) parent.getItemAtPosition(position);
-            String[] contactParts = selectedContact.split(": ");
-            String selectedNumber = contactParts[1];
+        // Check for permission to read contacts
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.READ_CONTACTS},
+                    PERMISSION_REQUEST_READ_CONTACTS);
+        } else {
+            // Permission has already been granted
+            loadContacts("");
+        }
 
-            getIntent().putExtra("selectedNumber", selectedNumber);
-            setResult(RESULT_OK, getIntent());
-            finish();
+        // Search functionality
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                loadContacts(newText);
+                return true;
+            }
         });
 
-        // Add text change listener to the search bar
-        searchEditText.addTextChangedListener(new TextWatcher() {
+        // ListView item click listener
+        listViewContacts.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                filterContacts(s.toString());
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                selectedContact = contactsList.get(position);
+                selectedContactTextView.setText(selectedContact);
             }
         });
     }
 
-    private ArrayList<String> getContacts() {
-        ArrayList<String> contactsList = new ArrayList<>();
-
-        Cursor cursor = getContentResolver().query(
+    private void loadContacts(String filter) {
+        contactsList.clear();
+        ContentResolver contentResolver = getContentResolver();
+        Cursor cursor = contentResolver.query(
                 ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
                 null,
-                null,
-                null,
-                null
+                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " LIKE ?",
+                new String[]{"%" + filter + "%"},
+                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC"
         );
 
         if (cursor != null) {
-            int nameIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
-            int numberIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
-
             while (cursor.moveToNext()) {
-                String contactName = (nameIndex >= 0) ? cursor.getString(nameIndex) : "Unknown";
-                String contactNumber = (numberIndex >= 0) ? cursor.getString(numberIndex) : "Unknown";
-                contactsList.add(contactName + ": " + contactNumber);
+                String contactName = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME));
+                String phoneNumber = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
+                contactsList.add(contactName + ": " + phoneNumber);
             }
             cursor.close();
+            adapter.notifyDataSetChanged();
         }
-
-        return contactsList;
     }
 
-    private void filterContacts(String query) {
-        ArrayList<String> filteredContacts = new ArrayList<>();
-
-        for (String contact : contactsList) {
-            if (contact.toLowerCase().contains(query.toLowerCase())) {
-                filteredContacts.add(contact);
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == PERMISSION_REQUEST_READ_CONTACTS) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                loadContacts("");
+            } else {
+                Toast.makeText(this, "Permission denied. Can't load contacts.", Toast.LENGTH_SHORT).show();
             }
         }
-
-        adapter.clear();
-        adapter.addAll(filteredContacts);
-        adapter.notifyDataSetChanged();
     }
 }

@@ -1,22 +1,28 @@
-<?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Search bar -->
-    <EditText
-        android:id="@+id/search_edit_text"
+    <SearchView
+        android:id="@+id/searchView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Search contacts"
-        android:inputType="text"/>
+        android:queryHint="Search Contacts" />
 
-    <!-- Contacts ListView -->
+    <TextView
+        android:id="@+id/selectedContactTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/searchView"
+        android:padding="16dp"
+        android:text="Selected Contact"
+        android:textSize="18sp"/>
+
     <ListView
-        android:id="@+id/contacts_list"
+        android:id="@+id/listViewContacts"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/search_edit_text"/>
+        android:layout_below="@id/selectedContactTextView"
+        android:divider="@null"
+        android:dividerHeight="0dp" />
 
 </RelativeLayout>
